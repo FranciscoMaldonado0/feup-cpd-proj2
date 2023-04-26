@@ -10,7 +10,7 @@ import java.util.Random;
 public class Game {
 
     //String word;
-    List<String> words_level1;
+    List<List<String>> levels;
     String realWord;
     String shuffledWord;
     String currentGuess;
@@ -19,11 +19,27 @@ public class Game {
 
     public Game() { // game constructor
         this.file = new File("input.txt");
+        this.levels = new ArrayList<>();
+
         List<String> level1 = new ArrayList<>();
         level1.add("boat");
         level1.add("flower");
         level1.add("night");
-        this.words_level1 = level1;
+        this.levels.add(level1);
+
+        List<String> level2 = new ArrayList<>();
+        level2.add("library");
+        level2.add("elephant");
+        level2.add("window");
+        level2.add("mistake");
+        this.levels.add(level2);
+
+        List<String> level3 = new ArrayList<>();
+        level3.add("mushrooom");
+        level3.add("disinterested");
+        level3.add("kitchen");
+
+        this.levels.add(level3);
     }
     public static void main(String[] args) {
 
@@ -55,16 +71,59 @@ public class Game {
             e.printStackTrace();
         }
     }
+    public void checkInput(String input){
+        boolean valid = true;
+        try{
+            int user_input = Integer.parseInt(input);
+            if (user_input < 0 || user_input > 3) {
+                valid = false;
+            }
+            if (valid) {
+                Random rand = new Random();
+                int gameLevel = user_input-1;
+                int int_random = rand.nextInt(this.levels.get(gameLevel).size());
+                this.realWord = this.levels.get(gameLevel).get(int_random);
+                this.writeToFile(this.realWord);
+                System.out.println("Random Word: "+this.realWord);
+            }
+
+        }catch (Exception ignored){
+            System.out.println("Enter a valid option: ");
+        }
+        if (!valid) {
+            valid = true;
+            System.out.println("Enter a valid option: ");
+            while (true){
+                try{
+                    int user_input = Integer.parseInt(this.readUserInput());
+                    if (user_input < 0 || user_input > 3) {
+                        valid = false;
+                    }
+                    if (valid) {
+                        Random rand = new Random();
+                        int gameLevel = user_input-1;
+                        int int_random = rand.nextInt(this.levels.get(gameLevel).size());
+                        this.realWord = this.levels.get(gameLevel).get(int_random);
+                        this.writeToFile(this.realWord);
+                        System.out.println("Random Word: "+this.realWord);
+                    }
+
+                }catch (Exception ignored){ }
+
+                if (valid) {
+                    break;
+                }else {
+                    System.out.println("Enter a valid option: ");
+                }
+            }
+        }
+
+    }
     public void chooseLevel() {
         System.out.println("Choose game level: (1, 2 or 3)");
-        // deal with gameLevel later
-        int gameLevel = Integer.parseInt(this.readUserInput())-1;
+        String option = this.readUserInput();
+        this.checkInput(option);
 
-        Random rand = new Random();
-        int int_random = rand.nextInt(this.words_level1.size());
-        this.realWord = this.words_level1.get(int_random);
-        this.writeToFile(this.realWord);
-        System.out.println("Random Word: "+this.realWord);
     }
     public void gameLoop() {
         int i = 0;
@@ -86,9 +145,8 @@ public class Game {
 
     }
     public void generateWord() {
-        String inputString = this.realWord;
         // Convert the realWord to a char array
-        char[] characters = inputString.toCharArray();
+        char[] characters = this.realWord.toCharArray();
 
         Random r = new Random();
         // Iterate through the char array
