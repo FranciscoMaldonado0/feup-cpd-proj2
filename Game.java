@@ -14,11 +14,11 @@ public class Game {
     String realWord;
     String shuffledWord;
     String currentGuess;
-    File file;
+    File file; // first line is the realWord and below are the user attempts
     String fileContent;
 
     public Game() { // game constructor
-        this.file = new File("project2/input.txt");
+        this.file = new File("input.txt");
         List<String> level1 = new ArrayList<>();
         level1.add("boat");
         level1.add("flower");
@@ -32,24 +32,39 @@ public class Game {
         //game.setWordToGuess();
         // put the word in the first line of the game file:
         //game.writeToFile(game.realWord);
-        game.chooseLevel();
 
-        game.getFileContent();
+        // cleans the file, to start another game
+        game.cleanFile();
+        // chooses the word of the game, and write it in the first line of teh file
+        game.chooseLevel();
         // generate the shuffleWord
         game.generateWord();
 
         game.gameLoop();
 
     }
+    public void cleanFile(){
+        try {
+            File file = this.file;
+            FileWriter fileWriter = new FileWriter(file);
+            String allToWrite = "";
+            fileWriter.write(allToWrite);
+            fileWriter.close();
+        } catch (IOException e) {
+            System.out.println("An error occurred while writing to file.");
+            e.printStackTrace();
+        }
+    }
     public void chooseLevel() {
         System.out.println("Choose game level: (1, 2 or 3)");
-        // deal with gameLevel
+        // deal with gameLevel later
         int gameLevel = Integer.parseInt(this.readUserInput())-1;
 
         Random rand = new Random();
         int int_random = rand.nextInt(this.words_level1.size());
         this.realWord = this.words_level1.get(int_random);
-        System.out.println(realWord);
+        this.writeToFile(this.realWord);
+        System.out.println("Random Word: "+this.realWord);
     }
     public void gameLoop() {
         int i = 0;
@@ -71,32 +86,23 @@ public class Game {
 
     }
     public void generateWord() {
-        // Create a string
         String inputString = this.realWord;
-
-        // Convert the string to a char array
+        // Convert the realWord to a char array
         char[] characters = inputString.toCharArray();
 
-        // Create an object of Random class
         Random r = new Random();
-
         // Iterate through the char array
         for (int i = 0; i < characters.length; i++) {
             // Generate a random number between 0 to length of char array
             int randomIndex = r.nextInt(characters.length);
-
             // Swap the characters
             char temp = characters[i];
             characters[i] = characters[randomIndex];
             characters[randomIndex] = temp;
         }
 
-        // Convert the char array to a string
-        String shuffledString = new String(characters);
-
         // Initialize shuffledWord
-        this.shuffledWord = shuffledString;
-
+        this.shuffledWord = new String(characters);
         // Print the shuffled string
         System.out.println('\n'+"Word to show: "+this.shuffledWord);
     }
@@ -109,6 +115,7 @@ public class Game {
         if (word == null){
             lineToWrite = readUserInput();
             this.currentGuess = lineToWrite;
+            this.getFileContent();
             try {
                 File file = this.file;
                 FileWriter fileWriter = new FileWriter(file);
@@ -122,10 +129,11 @@ public class Game {
         }
         else{
             try {
-                File file2 = this.file;
-                FileWriter fileWriter2 = new FileWriter(file2);
-                fileWriter2.write(word);
-                fileWriter2.close();
+                File file = this.file;
+                FileWriter fileWriter = new FileWriter(file);
+                fileWriter.write(word);
+                this.fileContent += word;
+                fileWriter.close();
             } catch (IOException e) {
                 System.out.println("An error occurred while writing Word to file.");
                 e.printStackTrace();
@@ -138,23 +146,8 @@ public class Game {
             reader = new BufferedReader(new FileReader(file));
             String fileContent = "";
             String line;
-            int i = 0;
             while ((line = reader.readLine()) != null) {
-                /*if (i == 0) {
-                    //System.out.println(line);
-                    fileContent += line + '\n';
-                    realWord = line;
-                    i++;
-                    continue;
-                }
-                if (i <= 3){
-                    fileContent += line + '\n';
-                    //System.out.println(line);
-                    i++;
-                }*/
                 fileContent += line + '\n';
-                i++;
-
             }
             this.fileContent = fileContent;
         } catch (IOException e) {
