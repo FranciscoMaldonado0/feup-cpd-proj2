@@ -71,59 +71,42 @@ public class Game {
             e.printStackTrace();
         }
     }
-    public void checkInput(String input){
-        boolean valid = true;
-        try{
-            int user_input = Integer.parseInt(input);
-            if (user_input < 0 || user_input > 3) {
-                valid = false;
-            }
-            if (valid) {
-                Random rand = new Random();
-                int gameLevel = user_input-1;
-                int int_random = rand.nextInt(this.levels.get(gameLevel).size());
-                this.realWord = this.levels.get(gameLevel).get(int_random);
-                this.writeToFile(this.realWord);
-                System.out.println("Random Word: "+this.realWord);
-            }
 
-        }catch (Exception ignored){
-            System.out.println("Enter a valid option: ");
-        }
-        if (!valid) {
-            valid = true;
-            System.out.println("Enter a valid option: ");
-            while (true){
-                try{
-                    int user_input = Integer.parseInt(this.readUserInput());
-                    if (user_input < 0 || user_input > 3) {
-                        valid = false;
-                    }
-                    if (valid) {
-                        Random rand = new Random();
-                        int gameLevel = user_input-1;
-                        int int_random = rand.nextInt(this.levels.get(gameLevel).size());
-                        this.realWord = this.levels.get(gameLevel).get(int_random);
-                        this.writeToFile(this.realWord);
-                        System.out.println("Random Word: "+this.realWord);
-                    }
+    public void checkInput(){
+        Scanner input = new Scanner(System.in);
+        String userInput;
+        boolean isValid = false;
 
-                }catch (Exception ignored){ }
+        while(!isValid){
+            System.out.print("Enter your input: ");
+            userInput = input.nextLine();
 
-                if (valid) {
-                    break;
-                }else {
-                    System.out.println("Enter a valid option: ");
+            try{
+                int user_input = Integer.parseInt(userInput);
+                if (user_input > 0 && user_input < 3) {
+                    isValid = true;
+                }
+                if (isValid) {
+                    Random rand = new Random();
+                    int gameLevel = user_input-1;
+                    int int_random = rand.nextInt(this.levels.get(gameLevel).size());
+                    this.realWord = this.levels.get(gameLevel).get(int_random);
+                    this.writeToFile(this.realWord);
+                    System.out.println("Random Word: "+this.realWord);
+                }
+                else{
+                    System.out.println("Invalid input. Please try again.");
                 }
             }
+            catch (Exception ignored){
+                System.out.println("Enter a valid option: ");
+            }
         }
-
     }
-    public void chooseLevel() {
-        System.out.println("Choose game level: (1, 2 or 3)");
-        String option = this.readUserInput();
-        this.checkInput(option);
 
+    public void chooseLevel() {
+        System.out.println("Choose game level: (1, 2 or 3)\n");
+        this.checkInput();
     }
     public void gameLoop() {
         int i = 0;
