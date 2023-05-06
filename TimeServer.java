@@ -76,6 +76,8 @@ public class TimeServer {
                 // JOGADOR AUTENTICADO, PODE JOGAR
                 if (authenticate(username,password)) {
                     writer.println("SUCCESS");
+                    writer.println("(The word to guess is: "+real_word+")");
+
                     // --- GAME ---
                     try {
                         //create string with string builder

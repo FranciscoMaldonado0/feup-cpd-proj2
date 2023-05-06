@@ -32,6 +32,7 @@ public class TimeClient {
             PrintWriter writer = new PrintWriter(output, true);
 
             boolean authenticated = false;
+            int aux = 0;
             //while socket is open
             while(!socket.isClosed()){
                 // Authenticate with the server using a username and password from a file
@@ -42,11 +43,18 @@ public class TimeClient {
                     System.out.print("Enter password: ");
                     String password = scanner.nextLine();
                     if (authenticate(socket, username, password)) {
-                        System.out.println("Authentication successful!");
+                        System.out.println("\nAuthentication successful!");
                         authenticated = true;
                     } else {
-                        System.out.println("Authentication failed!");
+                        System.out.println("\nAuthentication failed!");
                     }
+                }
+
+                // to delete later:
+                if (aux == 0){
+                    String solution = reader.readLine();
+                    System.out.println(solution);
+                    aux++;
                 }
 
                 //              --- GAME ---
