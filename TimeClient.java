@@ -25,6 +25,7 @@ public class TimeClient {
 
             System.out.println("Connected to " + hostname + " on port " + port);
 
+            Scanner scanner = new Scanner(System.in);
             InputStream input = socket.getInputStream();
             OutputStream output = socket.getOutputStream();
             BufferedReader sys_reader = new BufferedReader(new InputStreamReader(System.in));
@@ -37,8 +38,7 @@ public class TimeClient {
             while(!socket.isClosed()){
                 // Authenticate with the server using a username and password from a file
                 while (!authenticated){
-                    Scanner scanner = new Scanner(System.in);
-                    System.out.print("Enter username: ");
+                    System.out.print("\nEnter username: ");
                     String username = scanner.nextLine();
                     System.out.print("Enter password: ");
                     String password = scanner.nextLine();
