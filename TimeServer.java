@@ -56,6 +56,7 @@ public class TimeServer {
 
     private static class ClientHandler extends Thread {
         private Socket socket;
+        private String real_word = "boat"; // Default for now
 
         public ClientHandler(Socket socket) {
             this.socket = socket;
@@ -63,20 +64,79 @@ public class TimeServer {
 
         @Override
         public void run() {
+            // --- AUTENTICATION ---
             try {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+                InputStream input = socket.getInputStream();
+                OutputStream output = socket.getOutputStream();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+                PrintWriter writer = new PrintWriter(output, true);
     
                 String username = reader.readLine(); // reads request from client
                 String password = reader.readLine();
+                // JOGADOR AUTENTICADO, PODE JOGAR
                 if (authenticate(username,password)) {
                     writer.println("SUCCESS");
-    
+                    // --- GAME ---
+                    try {
+                        //create string with string builder
+                        StringBuilder client_guesses = new StringBuilder();
+                        String message2send = "Any word was entered.";
+
+                        boolean closed = false;
+                        // FAZER ALGO COM O INPUT DO CLIENT - JOGO
+                        while (!closed) {
+                            // LÊ DO CLIENTE
+                            String word_client = reader.readLine();
+                            System.out.println("word_client: "+word_client);
+
+                            // if the client guesses the word -> close the socket
+                            if (word_client.equals(real_word)){
+                                message2send = "Winner! You guess the word '" +real_word+ "'!!";
+                                lock.lock();
+                                try {
+                                    // FAZER ALGO COM O INPUT DO CLIENT? - JOGO (BEFORE END)
+                                    System.out.println("GAME OVERR");
+                                    // ESCREVE E ENVIA PARA O CLIENTE
+                                    writer.println(message2send.toString()+" | "+ client_guesses.toString());
+                                } finally {
+                                    lock.unlock();
+                                }
+
+                                socket.close();
+                                closed = true;
+                                break;
+                            }
+                            else{
+                                message2send = "Your guess is wrong.. try again!";
+                                // o cliente não advinhou a word, o jogo continua..
+                                client_guesses.append(word_client.toString()).append(", ");
+                                System.out.println("client_guesses: "+client_guesses+"\n");
+
+                                // ESCREVE E ENVIA PARA O CLIENTE
+                                writer.println(message2send.toString()+" | "+ client_guesses.toString());
+                            }
+
+                        }
+
+                    }
+                    catch (IOException e) {
+                        System.out.println("\nClient disconnected\n");
+                        e.printStackTrace();
+                    } finally {
+                        try {
+                            socket.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
                 else {
                     writer.println("ERROR");
                 }
-            } catch (IOException e) {
+
+            }
+            catch (IOException e) {
+                System.out.println("\nClient disconnected\n");
                 e.printStackTrace();
             } finally {
                 try {

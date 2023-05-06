@@ -25,9 +25,15 @@ public class TimeClient {
 
             System.out.println("Connected to " + hostname + " on port " + port);
 
+            InputStream input = socket.getInputStream();
+            OutputStream output = socket.getOutputStream();
+            BufferedReader sys_reader = new BufferedReader(new InputStreamReader(System.in));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+            PrintWriter writer = new PrintWriter(output, true);
+
+            boolean authenticated = false;
             //while socket is open
             while(!socket.isClosed()){
-                boolean authenticated = false;
                 // Authenticate with the server using a username and password from a file
                 while (!authenticated){
                     Scanner scanner = new Scanner(System.in);
@@ -42,44 +48,53 @@ public class TimeClient {
                         System.out.println("Authentication failed!");
                     }
                 }
-                    // Send a message to the server
-                    Scanner scanner = new Scanner(System.in);
-                    PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
-                    System.out.print("Enter message: ");
-                    String message = scanner.nextLine();
-                    writer.println(message);
-                    writer.flush();
 
-                    // Receive a response from the server
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                    String response = reader.readLine();
-                    System.out.println("Server response: " + response);
-                
+                //              --- GAME ---
+
+                //------- Send a message to the server
+
+                System.out.print("\nEnter your guess: ");
+                String guess = sys_reader.readLine();
+                writer.println(guess);
+
+                //------- Receive a response from the server
+
+                String result = reader.readLine();
+                System.out.println("> " + result);
+
+                // if the client wins the game -> close the socket
+                if(result.startsWith("Winner!")){
+                    lock.lock();
+                    try {
+                        socket.close();
+                    } finally {
+                        lock.unlock();
+                    }
+                }
+
             }
 
         } catch (UnknownHostException ex) {
-
             System.out.println("Server not found: " + ex.getMessage());
 
         } catch (IOException ex) {
-
             System.out.println("I/O error: " + ex.getMessage());
         }
-    
+
     }
 
     private static boolean authenticate(Socket socket, String username, String password) {
         try {
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-    
+
             // send credentials to server
             out.println(username);
             out.println(password);
-    
+
             // wait for server response
             String response = in.readLine();
-    
+
             // check response
             if (response.equals("SUCCESS")) {
                 return true;
@@ -91,5 +106,5 @@ public class TimeClient {
             return false;
         }
     }
-    
+
 }

@@ -71,7 +71,6 @@ public class Game {
             e.printStackTrace();
         }
     }
-
     public void checkInput(){
         Scanner input = new Scanner(System.in);
         String userInput;
@@ -103,7 +102,6 @@ public class Game {
             }
         }
     }
-
     public void chooseLevel() {
         System.out.println("Choose game level: (1, 2 or 3)\n");
         this.checkInput();
