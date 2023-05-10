@@ -1,6 +1,11 @@
 import java.io.*;
 import java.net.*;
-import java.util.Date;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.Map;
@@ -8,6 +13,8 @@ import java.util.Map;
 public class TimeServer {
 
     private static final String USERS_FILE = "database.txt";
+    private static final int BUFFER_SIZE = 1024;
+    private static final String CHARSET_NAME = "UTF-8";
     public static int sum = 0;
     private static final ReentrantLock lock = new ReentrantLock();
     
@@ -36,6 +43,68 @@ public class TimeServer {
             System.exit(1);
         }
 
+        try {
+            ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+            serverSocketChannel.bind(new InetSocketAddress(port));
+            serverSocketChannel.configureBlocking(false);
+
+            Selector selector = Selector.open();
+            serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+            
+            System.out.println("Server is listening on port " + port);
+
+            while (true) {
+                int readyChannels = selector.select();
+                System.out.println("readyChannels: " + readyChannels);
+                if (readyChannels == 0) {
+                    continue;
+                }   
+
+                for (SelectionKey key : selector.selectedKeys()) {
+                    if (key.isAcceptable()) {
+                        serverSocketChannel = (ServerSocketChannel) key.channel();
+                        SocketChannel socketChannel = serverSocketChannel.accept();
+                        socketChannel.configureBlocking(false);
+                        socketChannel.register(selector, SelectionKey.OP_READ);
+                        System.out.println("New client connected");
+
+                    } else if (key.isReadable()) {
+                        SocketChannel socketChannel = (SocketChannel) key.channel();
+                        ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
+                        int bytesRead = socketChannel.read(buffer);
+                        if (bytesRead == -1) {
+                            System.out.println("Client disconnected");
+                            key.cancel();
+                            socketChannel.close();
+                            continue;
+                        }
+                        String message = new String(buffer.array(), 0, bytesRead);
+                        String[] credentials = message.split(":");
+                        if (credentials.length == 2) {
+                            boolean authenticated = authenticate(credentials[0], credentials[1]);
+                            if (authenticated) {
+                                socketChannel.register(selector, SelectionKey.OP_WRITE, "SUCCESS");
+                            } else {
+                                socketChannel.register(selector, SelectionKey.OP_WRITE, "ERROR");
+                            }
+                        }
+                    } else if (key.isWritable()) {
+                        SocketChannel socketChannel = (SocketChannel) key.channel();
+                        String response = (String) key.attachment();
+                        ByteBuffer buffer = ByteBuffer.wrap(response.getBytes());
+                        socketChannel.write(buffer);
+                        socketChannel.close();
+                    }
+
+                }
+            }
+
+
+        } catch (IOException ex) {
+            System.out.println("Server exception: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+        /*
         try (ServerSocket serverSocket = new ServerSocket(port)) {
 
             System.out.println("Server is listening on port " + port);
@@ -51,8 +120,16 @@ public class TimeServer {
         } catch (IOException ex) {
             System.out.println("Server exception: " + ex.getMessage());
             ex.printStackTrace();
-        }
+        }*/
     }
+
+                
+    private static boolean authenticate(String username, String password) {
+        String expectedPassword = users.get(username);
+        return expectedPassword != null && expectedPassword.equals(password);
+    }
+
+
 
     private static class ClientHandler extends Thread {
         private Socket socket;
@@ -69,12 +146,15 @@ public class TimeServer {
     
                 String username = reader.readLine(); // reads request from client
                 String password = reader.readLine();
-                if (authenticate(username,password)) {
-                    writer.println("SUCCESS");
-    
-                }
-                else {
-                    writer.println("ERROR");
+
+                boolean authenticated = false;
+                while (!authenticated) {
+                    authenticated = authenticate(username, password);
+                    if (!authenticated) {
+                        writer.println("ERROR");
+                        username = reader.readLine();
+                        password = reader.readLine();
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -87,11 +167,6 @@ public class TimeServer {
             }
         }
 
-            
-        private boolean authenticate(String username, String password) {
-            String expectedPassword = users.get(username);
-            return expectedPassword != null && expectedPassword.equals(password);
-        }
     }
     
 }
